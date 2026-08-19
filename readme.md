@@ -1,34 +1,33 @@
-```markdown
-# Terminal Roulette Game (C++)
+# Slot Machine (C++)
 
-A lightweight, interactive, cross-platform terminal-based Roulette game built in C++17. Features real-time ANSI colored table navigation, flexible betting queues, and integrated audio effects powered by `miniaudio`.
+A terminal-based slot machine game built in C++17[cite: 6]. Features animated spinning reels[cite: 4, 5], dynamic audio effects via `miniaudio`[cite: 4, 5], and weighted RNG symbol payouts[cite: 4, 6].
 
 ---
 
 ## Features
 
-* **Interactive Table UI:** Navigate numbers, rows, dozens, and outside bets using keyboard controls.
-* **Bet Queue System:** Chain multiple bets together before spinning, with full undo capability.
-* **Cross-Platform Input:** Smooth, non-blocking controls across Linux and Windows terminals.
-* **Dynamic SFX & Music:** Background music, wheel spinning sound, and distinct outcome audio feedback.
+* **Animated Reel Spins:** Visual reel animation rendered directly in your terminal[cite: 4, 5].
+* **Cross-Platform Audio:** Integrated background music and sound effects using `miniaudio` (PulseAudio / ALSA)[cite: 4, 5].
+* **Weighted Probabilities:** Uses `std::discrete_distribution` for realistic symbol landing odds[cite: 4, 6].
+* **Wild Symbol Mechanics:** Wilds substitute for high-matching symbol combinations and trigger mega jackpots[cite: 4, 5].
 
 ---
 
 ## Audio Assets
 
-Place the following WAV files in the root folder alongside your executable:
+Place the following WAV audio files in the same directory as your compiled executable[cite: 5]:
 
-* `sound.wav` — Background music (loops during betting)
-* `spin.wav` — Wheel spin animation effect
-* `jackpot.wav` — Winning outcome sound effect
-* `fart.wav` — Losing outcome / Bankrupt sound effect
+* `sound.wav` — Background music (loops during gameplay)[cite: 5]
+* `spin.wav` — Reel spin animation effect[cite: 5]
+* `win.wav` — Winning spin / Jackpot sound effect[cite: 5]
+* `loss.wav` — Losing spin sound effect[cite: 5]
 
 ---
 
 ## Building & Running
 
-### Linux Dependencies
-Ensure your sound development libraries are installed before compiling:
+### Linux System Dependencies
+Install system sound headers required for `miniaudio` compilation:
 
 ```bash
 # Ubuntu / Debian / Pop!_OS
@@ -47,38 +46,156 @@ sudo dnf install alsa-lib-devel pulseaudio-libs-devel
 **Linux (GCC / Clang):**
 
 ```bash
-g++ -std=c++17 main.cpp -lpthread -ldl -lm -lasound -lpulse -o Roulette
-./Roulette
+g++ -std=c++17 main.cpp -lpthread -ldl -lm -lasound -lpulse -o Slots
+./Slots
 
 ```
 
 **Windows (MSVC / MinGW):**
 
 ```bash
-g++ -std=c++17 main.cpp -o Roulette.exe
-Roulette.exe
+g++ -std=c++17 main.cpp -o Slots.exe
+Slots.exe
 
 ```
 
 ---
 
-## Controls
+## How to Play
 
-| Key | Action |
-| --- | --- |
-| `W` / `A` / `S` / `D` or `Arrow Keys` | Move cursor around the roulette table |
-| `ENTER` | Select current highlighted box to place a bet |
-| `BACKSPACE` | Undo the last queued bet |
-| `SPACE` | Spin the wheel and evaluate all active bets |
-| `X` | Cash out and exit the game |
-| `R` | Restart after going bankrupt |
+1. Start with an initial balance of **$1000**.
+
+
+2. Enter your **bet amount** for the round (must be between $1 and your available balance).
+
+
+3. The 3 reels spin and land on weighted random symbols.
+
+
+4. Payouts are awarded based on left-to-right matching symbols or **Wild** substitutions.
+
+
+5. Enter **`y`** to play another round or **`n`** to cash out and exit.
+
+
 
 ---
 
-## Betting Rules & Limits
+## Symbols & Payouts
 
-* **Maximum Inside Bets:** You can place bets on up to 18 individual numbers per round.
-* **Payouts:** Standard roulette odds apply (Straight Up pays 35:1, Column/Dozen pays 2:1, Even Money pays 1:1).
+Payouts are awarded as bet multipliers based on matching 2 or 3 symbols:
+
+| Symbol | 2 Matches | 3 Matches | Weight | Approx. Chance / Reel |
+| --- | --- | --- | --- | --- |
+| **Wild** | x40
+
+ | x200
+
+ | 2
+
+ | ~2%
+
+ |
+| **Man** | x30
+
+ | x100
+
+ | 3
+
+ | ~3%
+
+ |
+| **Woman** | x20
+
+ | x75
+
+ | 5
+
+ | ~5%
+
+ |
+| **Dog** | x20
+
+ | x75
+
+ | 5
+
+ | ~5%
+
+ |
+| **Bag of Money** | x15
+
+ | x50
+
+ | 8
+
+ | ~8%
+
+ |
+| **Bell** | x15
+
+ | x50
+
+ | 8
+
+ | ~8%
+
+ |
+| **A** | x10
+
+ | x30
+
+ | 12
+
+ | ~12%
+
+ |
+| **K** | x8
+
+ | x20
+
+ | 14
+
+ | ~14%
+
+ |
+| **Q** | x8
+
+ | x20
+
+ | 14
+
+ | ~14%
+
+ |
+| **J** | x5
+
+ | x15
+
+ | 14
+
+ | ~14%
+
+ |
+| **10** | x5
+
+ | x15
+
+ | 15
+
+ | ~15%
+
+ |
+
+---
+
+## Project Structure
+
+```
+.
+├── main.cpp        # Game execution loop, bet input, audio engine[cite: 5, 6]
+├── functions.hpp   # Reel animation, symbol definitions, UI helpers[cite: 4, 6]
+└── miniaudio.h     # Single-header audio library[cite: 4, 5]
 
 ```
 

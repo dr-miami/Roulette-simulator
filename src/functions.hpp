@@ -1,196 +1,97 @@
 #pragma once
 #include <iostream>
-#include <vector>
-#include <string>
-#include <memory>
 #include <random>
-#include <ctime>
+#include <string>
+#include <vector>
+#include <cstdlib>
+#include <cstddef>
 #include <thread>
 #include <chrono>
-
-// Linux/POSIX non-blocking keyboard input
-#if defined(__linux__) || defined(__APPLE__)
-    #include <termios.h>
-    #include <unistd.h>
-    #include <sys/select.h>
-
-    inline int _getch() {
-        struct termios oldt, newt;
-        int ch;
-        tcgetattr(STDIN_FILENO, &oldt);
-        newt = oldt;
-        newt.c_lflag &= ~(ICANON | ECHO);
-        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-        ch = getchar();
-        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-        return ch;
-    }
-#else
-    #include <conio.h>
-    #include <windows.h>
-#endif
 
 // ANSI Colors
 #define RESET   "\033[0m"
 #define RED     "\033[31m"
-#define GREEN   "\033[32m"
-#define YELLOW  "\033[33m"
 #define CYAN    "\033[36m"
-#define MAGENTA "\033[35m"
+#define YELLOW  "\033[33m"
 #define BOLD    "\033[1m"
+#define GREEN   "\033[32m"
+#define MAGENTA "\033[35m"
 
-// Globals
-inline int playerBalance = 1000;
-
-// --- Bet Entry ---
-struct BetEntry {
-    int cursor;
-    int amount;
-    std::string label;
+struct Symbol
+{
+    std::string name;
+    std::vector<int> payouts; 
+    int weight;               
 };
 
-// --- TIMING UTILS ---
-inline void sleepMs(int ms) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
-}
-
-// --- Roulette Classes ---
-class Pocket {
-public:
-    int number;
-    Pocket(int n) : number(n) {}
-    virtual std::string getColor() const = 0;
-    bool isEven() const { return (number != 0 && number % 2 == 0); }
-    bool isOdd() const { return (number != 0 && number % 2 != 0); }
-    virtual ~Pocket() {}
+inline std::vector<Symbol> symbols =
+{
+    {"Wild",         {0, 10, 40, 200}, 2},   
+    {"Man",          {0, 8,  30, 100}, 3},
+    {"Woman",        {0, 6,  20, 75},  5},
+    {"Dog",          {0, 6,  20, 75},  5},
+    {"Bag of Money", {0, 5,  15, 50},  8},
+    {"Bell",         {0, 5,  15, 50},  8},
+    {"A",            {0, 4,  10, 30},  12},
+    {"K",            {0, 3,  8,  20},  14},
+    {"Q",            {0, 3,  8,  20},  14},
+    {"J",            {0, 2,  5,  15},  15},
+    {"10",           {0, 2,  5,  15},  15},
 };
 
-class RedPocket : public Pocket {
-public: using Pocket::Pocket; std::string getColor() const override { return "Red"; }
-};
+enum Symbolsrank { WILD, MAN, WOMAN, DOG, BAG_OF_MONEY, BELL, A, K, Q, J, TEN };
 
-class BlackPocket : public Pocket {
-public: using Pocket::Pocket; std::string getColor() const override { return "Black"; }
-};
-
-class GreenPocket : public Pocket {
-public: using Pocket::Pocket; std::string getColor() const override { return "Green"; }
-};
-
-class RouletteWheel {
-private:
-    std::vector<std::unique_ptr<Pocket>> pockets;
-    std::mt19937 rng;
-public:
-    RouletteWheel() : rng(static_cast<unsigned>(std::time(0))) {
-        for (int i = 0; i <= 36; ++i) {
-            if (i == 0) pockets.push_back(std::make_unique<GreenPocket>(i));
-            else {
-                bool isRed = ((i >= 1 && i <= 10) || (i >= 19 && i <= 28)) ? (i % 2 != 0) : (i % 2 == 0);
-                if (isRed) pockets.push_back(std::make_unique<RedPocket>(i));
-                else pockets.push_back(std::make_unique<BlackPocket>(i));
-            }
-        }
-    }
-    const Pocket& spin() {
-        std::uniform_int_distribution<int> dist(0, 36);
-        return *pockets[dist(rng)];
-    }
-};
-
-// --- Cross-Platform UI Utilities ---
+// Cross-platform Terminal Screen Clear
 inline void clearScreen() {
     std::cout << "\033[2J\033[1;1H";
 }
 
-inline void hideCursor() {
-    std::cout << "\033[?25l";
+// Timing helper
+inline void sleepMs(int ms) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-inline void showCursor() {
-    std::cout << "\033[?25h";
+inline void Title() 
+{
+    std::cout << GREEN << R"(
+  _________.____    ___________________    _____      _____  _________   ___ ___ .___ _______  ___________
+ /   _____/|    |   \_____  \__    ___/   /     \    /  _  \ \_   ___ \ /   |   \|   |\      \ \_   _____/
+ \_____  \ |    |    /   |   \|    |     /  \ /  \  /  /_\  \/    \  \//    ~    \   |/   |   \ |    __)_ 
+ /        \|    |___/    |    \    |    /    Y    \/    |    \     \___\    Y    /   /    |    \|        \
+/_______  /|_______ \_______  /____|    \____|__  /\____|__  /\______  /\___|_  /|___\____|__  /_______  /
+        \/         \/       \/                  \/         \/        \/       \/             \/        \/ 
+)" << RESET << std::endl;
 }
 
-inline void printTitle() {
-    std::cout << RED << BOLD << R"(
-$$$$$$$\                      $$\            $$\     $$\               
-$$  __$$\                     $$ |           $$ |    $$ |              
-$$ |  $$ | $$$$$$\  $$\   $$\ $$ | $$$$$$\ $$$$$$\ $$$$$$\    $$$$$$\  
-$$$$$$$  |$$  __$$\ $$ |  $$ |$$ |$$  __$$\\_$$  _|\_$$  _|  $$  __$$\ 
-$$  __$$< $$ /  $$ |$$ |  $$ |$$ |$$$$$$$$ | $$ |    $$ |    $$$$$$$$ |
-$$ |  $$ |$$ |  $$ |$$ |  $$ |$$ |$$   ____| $$ |$$\ $$ |$$\ $$   ____|
-$$ |  $$ |\$$$$$$  |\$$$$$$  |$$ |\$$$$$$$\  \$$$$  |\$$$$  |\$$$$$$$\ 
-\__|  \__| \______/  \______/ \__| \_______|  \____/  \____/  \_______|                                                                    
-    )" << RESET << std::endl;
+inline Symbol Reelsrng() 
+{
+    static std::mt19937 gen(std::random_device{}());
+    std::vector<int> weights;
+    weights.reserve(symbols.size());
+    for (const auto& s : symbols)
+        weights.push_back(s.weight);
+
+    std::discrete_distribution<> dist(weights.begin(), weights.end());
+    return symbols[static_cast<std::size_t>(dist(gen))];
 }
 
-inline void Booting() {
-    clearScreen();
-    std::cout << CYAN << BOLD << "[SYSTEM]: INITIALIZING ROULETTE..." << RESET << "\n";
-    sleepMs(700);
-    clearScreen();
-    std::cout << CYAN << BOLD << "[SYSTEM]: LOADING ASSETS..." << RESET << "\n";
-    sleepMs(700);
-    clearScreen();
-    printTitle();
-    sleepMs(1000);
-}
+// --- SLOT ANIMATION ---
+inline void rollAnimation() {
+    std::cout << YELLOW << BOLD << "\nSPINNING THE REELS..." << RESET << "\n";
+    
+    for (int i = 0; i < 15; i++) {
+        Symbol temp1 = Reelsrng();
+        Symbol temp2 = Reelsrng();
+        Symbol temp3 = Reelsrng();
 
-inline void printRouletteTable(int selection = -1) {
-    std::cout << "\n              " << (selection == 0 ? MAGENTA : GREEN) << "  [ 0 ]  " << RESET << "\n";
-
-    for (int row = 3; row >= 1; row--) {
-        std::cout << "    ";
-        for (int col = 0; col < 12; col++) {
-            int num = (col * 3) + row;
-            bool isRed = ((num >= 1 && num <= 10) || (num >= 19 && num <= 28)) ? (num % 2 != 0) : (num % 2 == 0);
-            
-            if (num == selection) {
-                std::cout << MAGENTA << "[" << (num < 10 ? "0" : "") << num << "]" << RESET;
-            } else {
-                std::cout << (isRed ? RED : BOLD) << "[" << (num < 10 ? "0" : "") << num << "]" << RESET;
-            }
-        }
+        std::cout << "\r" << CYAN << "[ " 
+                  << temp1.name << " ]  [ " 
+                  << temp2.name << " ]  [ " 
+                  << temp3.name << " ]      " << RESET;
         
-        int colBetId = (row == 3) ? 38 : (row == 2 ? 39 : 40);
-        std::cout << (selection == colBetId ? MAGENTA : GREEN) << " (2to1)" << RESET << "\n";
-    }
-
-    std::cout << "    " << (selection == 41 ? MAGENTA : GREEN) << "    [  1st 12  ]" << RESET 
-              << (selection == 42 ? MAGENTA : GREEN) << "[  2nd 12  ]" << RESET 
-              << (selection == 43 ? MAGENTA : GREEN) << "[  3rd 12  ]" << RESET << "\n";
-
-    std::cout << "    " << (selection == 44 ? MAGENTA : GREEN) << "    [1-18]" << RESET 
-              << (selection == 45 ? MAGENTA : GREEN) << "[Even]" << RESET 
-              << (selection == 46 ? MAGENTA : RED)   << "[ RED ]" << RESET 
-              << (selection == 47 ? MAGENTA : BOLD)  << "[BLACK]" << RESET 
-              << (selection == 48 ? MAGENTA : GREEN) << "[ Odd ]" << RESET 
-              << (selection == 49 ? MAGENTA : GREEN) << "[19-36]" << RESET << "\n\n";
-}
-
-inline void printBetQueue(const std::vector<BetEntry>& bets, int totalWagered) {
-    if (bets.empty()) {
-        std::cout << CYAN << "  Bet Queue: (empty)  " << RESET << "                              \n";
-    } else {
-        std::cout << CYAN << BOLD << "  Bet Queue:" << RESET << "                              \n";
-        for (size_t i = 0; i < bets.size(); ++i) {
-            std::cout << "    " << YELLOW << "[" << (i + 1) << "]" << RESET
-                      << " $" << bets[i].amount
-                      << " on " << BOLD << bets[i].label << RESET
-                      << "                    \n";
-        }
-        std::cout << CYAN << "  Total wagered: $" << totalWagered << RESET << "                    \n";
-    }
-}
-
-inline void rollAnimation(RouletteWheel& wheel) {
-    std::cout << YELLOW << BOLD << "\nSPINNING THE WHEEL..." << RESET << "\n[ ";
-    for (int i = 0; i < 20; i++) {
-        const Pocket& temp = wheel.spin();
-        std::string color = (temp.getColor() == "Red") ? RED : (temp.getColor() == "Black" ? BOLD : GREEN);
-        std::cout << color << temp.number << RESET << " ";
         std::cout.flush();
-        sleepMs(50 + (i * 10));
+        
+        sleepMs(60 + (i * i)); 
     }
-    std::cout << "]\n";
+    std::cout << "\r" << std::string(50, ' ') << "\r"; 
 }

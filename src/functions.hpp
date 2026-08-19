@@ -7,8 +7,28 @@
 #include <ctime>
 #include <thread>
 #include <chrono>
-#include <conio.h>
-#include <windows.h>
+
+// Linux/POSIX non-blocking keyboard input
+#if defined(__linux__) || defined(__APPLE__)
+    #include <termios.h>
+    #include <unistd.h>
+    #include <sys/select.h>
+
+    inline int _getch() {
+        struct termios oldt, newt;
+        int ch;
+        tcgetattr(STDIN_FILENO, &oldt);
+        newt = oldt;
+        newt.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+        ch = getchar();
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+        return ch;
+    }
+#else
+    #include <conio.h>
+    #include <windows.h>
+#endif
 
 // ANSI Colors
 #define RESET   "\033[0m"
@@ -26,7 +46,7 @@ inline int playerBalance = 1000;
 struct BetEntry {
     int cursor;
     int amount;
-    std::string label; // human-readable name
+    std::string label;
 };
 
 // --- TIMING UTILS ---
@@ -78,20 +98,17 @@ public:
     }
 };
 
-// --- UI Utilities ---
+// --- Cross-Platform UI Utilities ---
 inline void clearScreen() {
-    COORD cursorPosition;
-    cursorPosition.X = 0;
-    cursorPosition.Y = 0;
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursorPosition);
+    std::cout << "\033[2J\033[1;1H";
 }
 
 inline void hideCursor() {
-    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-    CONSOLE_CURSOR_INFO info;
-    info.dwSize = 100;
-    info.bVisible = FALSE;
-    SetConsoleCursorInfo(consoleHandle, &info);
+    std::cout << "\033[?25l";
+}
+
+inline void showCursor() {
+    std::cout << "\033[?25h";
 }
 
 inline void printTitle() {
@@ -108,14 +125,15 @@ $$ |  $$ |\$$$$$$  |\$$$$$$  |$$ |\$$$$$$$\  \$$$$  |\$$$$  |\$$$$$$$\
 }
 
 inline void Booting() {
+    clearScreen();
     std::cout << CYAN << BOLD << "[SYSTEM]: INITIALIZING ROULETTE..." << RESET << "\n";
-    std::this_thread::sleep_for(std::chrono::milliseconds(700));
-    system("cls");
+    sleepMs(700);
+    clearScreen();
     std::cout << CYAN << BOLD << "[SYSTEM]: LOADING ASSETS..." << RESET << "\n";
-    std::this_thread::sleep_for(std::chrono::milliseconds(700));
-    system("cls");
+    sleepMs(700);
+    clearScreen();
     printTitle();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    sleepMs(1000);
 }
 
 inline void printRouletteTable(int selection = -1) {
@@ -138,12 +156,10 @@ inline void printRouletteTable(int selection = -1) {
         std::cout << (selection == colBetId ? MAGENTA : GREEN) << " (2to1)" << RESET << "\n";
     }
 
-    // Outside Bets (Dozens)
     std::cout << "    " << (selection == 41 ? MAGENTA : GREEN) << "    [  1st 12  ]" << RESET 
               << (selection == 42 ? MAGENTA : GREEN) << "[  2nd 12  ]" << RESET 
               << (selection == 43 ? MAGENTA : GREEN) << "[  3rd 12  ]" << RESET << "\n";
 
-    // Outside Bets (Even/Odd/Colors)
     std::cout << "    " << (selection == 44 ? MAGENTA : GREEN) << "    [1-18]" << RESET 
               << (selection == 45 ? MAGENTA : GREEN) << "[Even]" << RESET 
               << (selection == 46 ? MAGENTA : RED)   << "[ RED ]" << RESET 
@@ -152,7 +168,6 @@ inline void printRouletteTable(int selection = -1) {
               << (selection == 49 ? MAGENTA : GREEN) << "[19-36]" << RESET << "\n\n";
 }
 
-// Prints the queued bets panel below the table
 inline void printBetQueue(const std::vector<BetEntry>& bets, int totalWagered) {
     if (bets.empty()) {
         std::cout << CYAN << "  Bet Queue: (empty)  " << RESET << "                              \n";
@@ -168,7 +183,6 @@ inline void printBetQueue(const std::vector<BetEntry>& bets, int totalWagered) {
     }
 }
 
-// --- ANIMATION UTILS ---
 inline void rollAnimation(RouletteWheel& wheel) {
     std::cout << YELLOW << BOLD << "\nSPINNING THE WHEEL..." << RESET << "\n[ ";
     for (int i = 0; i < 20; i++) {

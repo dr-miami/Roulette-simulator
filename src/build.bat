@@ -1,1 +1,0 @@
-g++ main.cpp -o roulette.exe -lwinmm -lpthread -lm

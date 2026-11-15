@@ -103,7 +103,7 @@ int main()
             }
         }
 
-        // Win/Loss Payout and Sound Logic
+        // Win/Loss payout and sound logic
         if (reel1.name == "Wild" && reel2.name == "Wild" && reel3.name == "Wild")
         {
             if (audioEnabled) {

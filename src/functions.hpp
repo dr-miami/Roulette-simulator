@@ -17,6 +17,7 @@
 #define GREEN   "\033[32m"
 #define MAGENTA "\033[35m"
 
+// Payouts for symbols
 struct Symbol
 {
     std::string name;
@@ -24,6 +25,7 @@ struct Symbol
     int weight;               
 };
 
+// Symbols with value
 inline std::vector<Symbol> symbols =
 {
     {"Wild",         {0, 10, 40, 200}, 2},   
@@ -41,16 +43,15 @@ inline std::vector<Symbol> symbols =
 
 enum Symbolsrank { WILD, MAN, WOMAN, DOG, BAG_OF_MONEY, BELL, A, K, Q, J, TEN };
 
-// Cross-platform Terminal Screen Clear
 inline void clearScreen() {
     std::cout << "\033[2J\033[1;1H";
 }
 
-// Timing helper
 inline void sleepMs(int ms) {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
+// ASCII main title
 inline void Title() 
 {
     std::cout << GREEN << R"(
@@ -63,6 +64,7 @@ inline void Title()
 )" << RESET << std::endl;
 }
 
+// Random number gen for reels
 inline Symbol Reelsrng() 
 {
     static std::mt19937 gen(std::random_device{}());
@@ -75,7 +77,7 @@ inline Symbol Reelsrng()
     return symbols[static_cast<std::size_t>(dist(gen))];
 }
 
-// --- SLOT ANIMATION ---
+// Slot animation
 inline void rollAnimation() {
     std::cout << YELLOW << BOLD << "\nSPINNING THE REELS..." << RESET << "\n";
     
